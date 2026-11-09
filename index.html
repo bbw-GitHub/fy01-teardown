@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f3f7fc" />
+  <meta name="description" content="菲远 FY-01 纯白 ITX 主机 · Three.js 可交互装机与拆解可视化" />
+  <title>FY-01 装机实验室 · 3D 拆解可视化</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+    <div class="ambient-grid"></div>
+    <div class="stage-halo"></div>
+
+    <canvas id="scene" aria-label="菲远 FY-01 台式机三维模型"></canvas>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><span>FY</span><i></i></div>
+        <div class="brand-copy">
+          <div class="brand-title">装机实验室 <span>/ TEARDOWN LAB</span></div>
+          <div class="brand-sub">FY-01 · 纯白 ITX 性能主机</div>
+        </div>
+      </div>
+
+      <div class="build-meta">
+        <span class="meta-chip"><i class="chip-dot cpu"></i>i5-14490F</span>
+        <span class="meta-chip"><i class="chip-dot gpu"></i>RTX 5060 8G</span>
+        <span class="meta-chip"><i class="chip-dot mem"></i>DDR4 16G</span>
+        <span class="meta-chip"><i class="chip-dot psu"></i>650W SFX</span>
+        <span class="meta-chip ghost">11.5L · 三面玻璃</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="icon-btn mobile-only" id="togglePartsBtn" aria-label="打开部件清单" title="部件清单">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        </button>
+        <button class="icon-btn mobile-only" id="toggleDetailBtn" aria-label="打开详情" title="部件详情">
+          <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg>
+        </button>
+        <button class="soft-btn" id="guideBtn">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.4 2.4 0 1 1 3.5 2.15c-.7.4-1.1 1-1.1 1.85v.35"/><path d="M12 17.2h.01"/></svg>
+          <span>操作指南</span>
+        </button>
+        <button class="icon-btn" id="fullscreenBtn" aria-label="全屏" title="全屏">
+          <svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <aside class="panel parts-panel" id="partsPanel">
+      <div class="panel-top">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span>COMPONENTS</div>
+          <h2>部件清单</h2>
+        </div>
+        <button class="panel-collapse" id="collapseParts" aria-label="收起清单">
+          <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="overview-card">
+        <div class="progress-ring" id="progressRing" style="--progress:0">
+          <div class="progress-inner"><strong id="progressNum">0</strong><span>/ <b id="progressTotal">17</b></span></div>
+        </div>
+        <div class="overview-copy">
+          <span class="tiny-label">TEARDOWN PROGRESS</span>
+          <strong id="overviewTitle">整机装配完整</strong>
+          <p id="overviewDesc">点击部件即可独立拆解<br/>玻璃与风扇均可交互</p>
+          <div class="overview-stats">
+            <span><b id="screwCount">68</b> 颗五金</span>
+            <span><b>6</b> 组散热</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-row" id="filterRow">
+        <button class="filter-btn active" data-filter="all">全部</button>
+        <button class="filter-btn" data-filter="core">核心</button>
+        <button class="filter-btn" data-filter="cool">散热</button>
+        <button class="filter-btn" data-filter="case">机箱</button>
+        <button class="filter-btn" data-filter="power">供电</button>
+      </div>
+
+      <div class="parts-scroll" id="partsList"></div>
+
+      <div class="panel-foot">
+        <div class="foot-note">
+          <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+          <span>全模组 · 定制白色线材</span>
+        </div>
+      </div>
+    </aside>
+
+    <aside class="panel detail-panel" id="detailPanel">
+      <div class="panel-top detail-head">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span>SPECIFICATION</div>
+          <h2 id="detailPanelTitle">细节档案</h2>
+        </div>
+        <button class="panel-collapse" id="detailBack" aria-label="返回概览">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="detail-scroll" id="detailScroll">
+        <section class="detail-empty" id="detailEmpty">
+          <div class="guide-visual">
+            <div class="guide-orbit"></div>
+            <div class="guide-cube">
+              <span class="cube-face f1"></span><span class="cube-face f2"></span><span class="cube-face f3"></span>
+              <span class="cube-glow"></span>
+            </div>
+            <span class="guide-tag">FY-01</span>
+          </div>
+          <h3>把整机拆开看</h3>
+          <p>拖动旋转视角，滚轮缩放。点击任意部件开始拆解，系统会自动让位上层零件。</p>
+          <ul class="quick-steps">
+            <li><span>01</span><div><b>点击部件</b><small>发光高亮并弹出参数</small></div></li>
+            <li><span>02</span><div><b>自动让位</b><small>按装配关系逐层拆下</small></div></li>
+            <li><span>03</span><div><b>单独装回</b><small>再次点击或使用详情按钮</small></div></li>
+          </ul>
+          <button class="primary-btn block" id="heroExplodeBtn">
+            <svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
+            一键拆解整机
+          </button>
+          <div class="key-hints">
+            <span><kbd>拖动</kbd> 旋转</span>
+            <span><kbd>滚轮</kbd> 缩放</span>
+            <span><kbd>R</kbd> 重置</span>
+          </div>
+        </section>
+
+        <section class="detail-content" id="detailContent" hidden>
+          <div class="detail-hero" id="detailHero">
+            <div class="detail-index" id="detailIndex">01</div>
+            <div class="detail-hero-top">
+              <span class="category-pill" id="detailCategory">核心硬件</span>
+              <span class="status-pill" id="detailStatus">已安装</span>
+            </div>
+            <div class="detail-icon" id="detailIcon">CPU</div>
+            <h3 id="detailName">英特尔 i5-14490F</h3>
+            <p class="detail-sub" id="detailSub">Intel Core i5 · LGA1700</p>
+          </div>
+
+          <div class="detail-body">
+            <p class="detail-desc" id="detailDesc"></p>
+
+            <div class="spec-title"><span>关键参数</span><i></i></div>
+            <div class="spec-grid" id="specGrid"></div>
+
+            <div class="teardown-note">
+              <div class="note-head">
+                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.6-2.6 2.1-2.9z"/></svg>
+                <span>拆解要点</span>
+              </div>
+              <p id="detailTeardown"></p>
+            </div>
+
+            <div class="screw-line" id="detailScrews">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 8v8M8.8 9.8l6.4 4.4M15.2 9.8l-6.4 4.4"/></svg>
+              <span id="detailScrewText">4 颗固定螺丝</span>
+              <span class="screw-dots"><i></i><i></i><i></i><i></i></span>
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <button class="primary-btn" id="togglePartBtn">
+              <svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>
+              <span>拆下此部件</span>
+            </button>
+            <button class="ghost-btn" id="focusPartBtn">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M4 8V5a1 1 0 0 1 1-1h3M20 8V5a1 1 0 0 0-1-1h-3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 1-1 1h-3"/></svg>
+              聚焦视角
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <div class="panel-foot detail-foot">
+        <div class="foot-note">
+          <span class="live-dot"></span>
+          <span id="footStatus">实时渲染 · 点击部件开始拆解</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="label-layer" id="labelLayer" aria-hidden="true">
+      <svg class="label-lines" id="labelLines"></svg>
+    </div>
+
+    <div class="hover-tip" id="hoverTip">
+      <span id="hoverName"></span>
+      <small id="hoverSpec"></small>
+    </div>
+
+    <div class="view-cluster" id="viewCluster">
+      <button class="view-btn active" data-view="iso" title="等轴视角">ISO</button>
+      <button class="view-btn" data-view="left" title="左侧视角">L</button>
+      <button class="view-btn" data-view="front" title="正面视角">F</button>
+      <button class="view-btn" data-view="top" title="俯视视角">T</button>
+      <button class="view-btn" data-view="rear" title="后部视角">R</button>
+    </div>
+
+    <div class="dock">
+      <button class="dock-btn primary" id="explodeBtn">
+        <svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>
+        <span>一键拆解</span>
+      </button>
+      <button class="dock-btn" id="restoreBtn">
+        <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6M4 4v4.6h4.6"/></svg>
+        <span>复原</span>
+      </button>
+      <span class="dock-sep"></span>
+      <button class="dock-btn icon-only active" id="labelsBtn" title="显示/隐藏标注">
+        <svg viewBox="0 0 24 24"><path d="M4 7h10M4 12h7M4 17h10M17 7h3M17 12h3M17 17h3"/></svg>
+      </button>
+      <button class="dock-btn icon-only" id="rotateBtn" title="自动旋转">
+        <svg viewBox="0 0 24 24"><path d="M20 8a8 8 0 1 0 1 6M20 4v4h-4"/></svg>
+      </button>
+      <button class="dock-btn icon-only" id="resetBtn" title="重置视角">
+        <svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8M5 10v9h14v-9"/></svg>
+      </button>
+    </div>
+
+    <div class="guide-toast" id="guideToast">
+      <div class="toast-ring"></div>
+      <div>
+        <strong>拖动旋转 · 点击部件拆解</strong>
+        <span>玻璃上也可操作，系统会自动移除遮挡件</span>
+      </div>
+      <button id="dismissToast" aria-label="关闭提示">×</button>
+    </div>
+
+    <div class="toast-stack" id="toastStack"></div>
+
+    <div class="loading" id="loading">
+      <div class="loading-mark">
+        <div class="loader-cube">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="loading-ring"></div>
+      </div>
+      <div class="loading-copy">
+        <div class="loading-title">FY-01 <span>TEARDOWN LAB</span></div>
+        <div class="loading-sub">正在构建 68 颗精密螺丝与 19 个可交互部件</div>
+        <div class="loading-bar"><i id="loadingBar"></i></div>
+        <div class="loading-pct"><span id="loadingPct">0%</span><span>THREE.JS · REAL-TIME 3D</span></div>
+      </div>
+    </div>
+
+    <div class="modal" id="guideModal" hidden>
+      <div class="modal-backdrop" data-close="guideModal"></div>
+      <div class="modal-card">
+        <div class="modal-head">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span>INTERACTION GUIDE</div>
+            <h2>拆解操作指南</h2>
+          </div>
+          <button class="modal-close" data-close="guideModal" aria-label="关闭">×</button>
+        </div>
+        <div class="guide-grid">
+          <article><span class="guide-num">01</span><div class="guide-ico"><svg viewBox="0 0 24 24"><path d="M5 9l-2 2 2 2M19 9l2 2-2 2M9 5l2-2 2 2M9 19l2 2 2-2"/><circle cx="12" cy="12" r="4"/></svg></div><h4>自由观察</h4><p>左键拖动旋转整机，滚轮缩放，右键拖动平移视角。</p></article>
+          <article><span class="guide-num">02</span><div class="guide-ico"><svg viewBox="0 0 24 24"><path d="M9 3v4M15 3v4M4 9h4M16 9h4M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></div><h4>点选拆解</h4><p>点击任意部件即可单独拆出；被遮挡时，上层零件会自动让位。</p></article>
+          <article><span class="guide-num">03</span><div class="guide-ico"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M17 14l3 3-3 3"/></svg></div><h4>查看参数</h4><p>右侧面板展示真实型号、关键规格与拆解要点，支持一键聚焦。</p></article>
+          <article><span class="guide-num">04</span><div class="guide-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></div><h4>演示模式</h4><p>使用底部工具栏一键拆解/复原、自动旋转、开关标注与重置视角。</p></article>
+        </div>
+        <div class="modal-foot">
+          <div class="shortcut-list"><span><kbd>R</kbd> 重置</span><span><kbd>Space</kbd> 自动旋转</span><span><kbd>1-5</kbd> 切换视角</span><span><kbd>Esc</kbd> 取消选择</span></div>
+          <button class="primary-btn" data-close="guideModal">开始探索</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="webgl-error" id="webglError" hidden>
+      <div class="error-card">
+        <strong>无法启动 3D 渲染</strong>
+        <p>当前浏览器未启用 WebGL2。请使用最新版 Edge / Chrome，并开启硬件加速后刷新页面。</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
